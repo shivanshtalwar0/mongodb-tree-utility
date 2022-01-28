@@ -1,0 +1,32 @@
+[
+    {
+      '$match': {
+        'parent': null
+      }
+    }, {
+      '$graphLookup': {
+        'from': 'tree', 
+        'startWith': '$_id', 
+        'connectFromField': '_id', 
+        'connectToField': 'parent', 
+        'as': 'children', 
+        'depthField': 'level'
+      }
+    }, {
+      '$match': {
+        'parent': null
+      }
+    }, {
+      '$addFields': {
+        'children': {
+          '$function': {
+            'body': 'function(children,root) {\n                    const obj=Object.assign({},root)\n                    const map={}\n                    children.sort((a,b)=>{\n                      if(a.level<b.level){\n                        return -1\n                      }\n                      else{\n                        return 1\n                      }\n                    }).reduce((acc,curr)=>{\n                      if(!acc[curr.id]){\n                      acc[curr._id]=curr\n                      acc[curr._id].children=[]\n                      }\n                      if(acc[curr.parent])\n                      acc[curr.parent].children.push(curr)\n                      return acc;\n                    },map)\n\n                                        const arr=Object.values(map).filter((val)=>val.level==0)\n\n                                     return arr \n                  }', 
+            'args': [
+              '$children', '$$ROOT'
+            ], 
+            'lang': 'js'
+          }
+        }
+      }
+    }
+  ]
